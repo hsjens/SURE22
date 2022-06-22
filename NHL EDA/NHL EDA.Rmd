@@ -1,0 +1,175 @@
+---
+title: "NHL EDA"
+subtitle: "Exploratory data analysis using NHL playoff data"  
+author: 
+  - "Hailey Jensen, Eric Warren, and Gary Zhang"
+date: '6/24/2022'
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: "16:9"
+      countIncrementalSlides: true
+---
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+  #fig.width=9, 
+  #fig.height=3.5, 
+  fig.retina=3,
+  out.width = "100%",
+  cache = FALSE,
+  #echo = TRUE,
+  message = FALSE, 
+  warning = FALSE,
+  hiline = TRUE
+)
+```
+
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_accent(
+  base_color = "#7FB0FF"
+)
+```
+
+# Describing Data
+
+- Our data has 34 columns with 7721 observations
+- All observations are from the NHL Stanley Cup 2022 playoffs
+  - Not inclusive of the Stanley Cup Finals
+
+```{r, echo = FALSE}
+library(tidyverse)
+playoff_shot_data <- read_csv("~/R/CMU labs/nhl_playoffs_shots_2022 (1).csv")
+playoff_shot_data[1:6, ]%>%
+  rename(shooterHand = shooterLeftRight, xcord = arenaAdjustedXCord, ycord = arenaAdjustedYCord)%>%
+  select(shooterName, team, shooterHand, event, shotType, shotDistance, teamCode, time, xcord, ycord)%>%
+  knitr::kable(format = 'html')
+```
+
+---
+
+# Limitations
+
+- Each team played a different number of games
+  - For example, Nashville only played 4 games whereas Colorado played 14 games
+
+- We were not given player positions in the data set
+
+- The sample size is small compared to a regular NHL season
+
+- Could not perform in depth player analysis due to only having shot data available 
+
+---
+
+## Background Information
+
+####**What we're doing**
+
+--
+
+Looking at the NHL 2022 playoff data we are presented with a series of questions we wanted to look into more in depth
+
+--
+
+####**Why should you care?**
+
+--
+
+---
+
+class: inverse center middle
+
+# Question 1 
+
+--
+
+Is there a difference between left handed vs. right handed players shots?
+
+---
+
+**The Difference in Shot Location Between Left Handed and Right Handed Shooters**
+
+```{r, echo = FALSE, fig.width= 9, fig.height= 4.9}
+playoff_shot_data$shooterLeftRight <- factor(playoff_shot_data$shooterLeftRight, 
+                                             labels = c("Left Handed Shooter", "Right Handed Shooter"))
+
+library(sportyR)
+playoff_shot_data$shooterLeftRight <- factor(playoff_shot_data$shooterLeftRight, labels = c("Left Handed Shooter", "Right Handed Shooter"))
+nhl_shots_filter <- playoff_shot_data %>% filter(arenaAdjustedYCord < 41, arenaAdjustedYCord > -41) %>% mutate(absXCoord = -abs(arenaAdjustedXCord))
+geom_hockey(league = "NHL", full_surf = F) + 
+  stat_density2d(data = nhl_shots_filter,
+                 adjust = 0.5,
+                 alpha = 0.5,
+                 h = 10,
+                 aes(x = absXCoord,
+                     y = arenaAdjustedYCord,
+                     fill = after_stat(level)),
+                 geom = "polygon") +
+  scale_fill_gradient(low = "cornflowerblue",
+                      high = "darkred") +
+  facet_wrap(~ shooterLeftRight, ncol = 2) +
+  labs(#title = "Differences in Position on the Ice Both Handed Players Shoot",
+       caption = "Data Courtesy of MoneyPuck.com") + 
+  theme(legend.position = "right")
+```
+
+---
+class: inverse center middle
+
+# Question 2 
+
+--
+
+Is there a relationship between shot type and the distance of the shot?
+
+---
+**How Type of Shot Varies by Distance**
+
+```{r, echo = FALSE, fig.width= 9, fig.height= 5}
+mx <- mean(playoff_shot_data$shotDistance)
+
+playoff_shot_data%>%
+  ggplot(aes(x = shotDistance))+
+  geom_histogram(bins = 15, 
+                 color = "cornflowerblue", 
+                 fill = "cornflowerblue",
+                 alpha = .22, 
+                 size = .65) +
+  geom_vline(xintercept= mx,linetype="88", color = "darkred") +
+  labs(#title = "How Type of Shot Varies by Distance",
+       x = "Distance Away from Goal (in feet)",
+       y = "Frequency of Type of Shot",
+       caption = "Data Courtesy of Moneypuck.com") +
+  theme_bw() +
+  facet_wrap(~ shotType, ncol = 1)
+```
+
+---
+class: inverse center middle
+
+# Question 3
+
+--
+
+idk
+---
+
+
+
+---
+class: center, middle
+
+# Thanks!
+
+Slides created via the R packages:
+
+[**xaringan**](https://github.com/yihui/xaringan)<br>
+[gadenbuie/xaringanthemer](https://github.com/gadenbuie/xaringanthemer)
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](http://yihui.name/knitr), and [R Markdown](https://rmarkdown.rstudio.com).
